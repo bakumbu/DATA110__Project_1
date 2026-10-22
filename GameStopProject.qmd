@@ -1,0 +1,127 @@
+---
+title: "GameStopProject_1"
+format: html
+editor: visual
+---
+
+## Quarto
+
+**The data I am analyzing today comes from Crawl Feeds.** It displays customer review data from GameStop, showing information like customer review, rating, average rating, and even review link.
+
+Today I plan to explore if factors such as recommendation have had any significant impact on the customer sentiment of any of the products that were purchased at GameStop. (I want to see If there is any correlation between reviews and customer perception)
+
+```{r}
+#install.packages("tidyverse")
+#install.packages("dplyr")
+#install.packages("dslabs")
+#install.packages("ggplot2")
+#library(tidyverse)
+#library(dplyr)
+#library(ggplot2)
+#library(dslabs)
+#install.packages("viridis")
+#library(viridis)
+
+#gamestopsales <- read_csv("gamestop.csv")
+
+#loading libraries/dataset
+```
+
+```{r}
+#inspecting data (I already have but it's nice to peek the head again like this before starting)
+head(gamestopsales)
+gamestopsales
+```
+
+```{r}
+#trying to view the amount of reviews for every product
+#not a very clear plot and is not well displayed or formatted
+
+table(gamestopsales$name) #gives us the counts
+gamestopsales %>% ggplot(aes(name, fill=name)) + geom_bar()
+```
+
+```{r}
+#slightly better but still not super clear 
+#there are too many products, so I think a legend is needed for readability
+ggplot(gamestopsales, aes(x = name))+
+  geom_bar()
+```
+
+```{r}
+#Average rating of brands sold at GameStop
+#I figured that filtering the data by brand instead of individual product would give me a better idea of which products are 
+#The only issue is that my legend is on a scale of 0 to 4000 which I am stumped to fix
+
+library(viridis)
+library(treemap)
+treemap(gamestopsales,
+        index="brand",
+        vSize="average_rating",
+        vColor="average_rating",
+        type="value",
+        title = "Average Rating of Various Brands Sold at GameStop",
+        title.legend = "Average Rating of each Product by Brand") 
+        
+```
+
+```{r}
+#Filtering Nintendo data as a sample to verify the rating score and make sure the treemap is not measuring on a different value
+
+#The error seems to lie with only the legend fortunately, I believe it is a default set by the treemap
+
+Nintendo_Data <- gamestopsales[gamestopsales$brand == "Nintendo",]
+
+Nintendo_Data
+```
+
+```{r}
+
+#separating the products based on whether or not they would have been recommended to other customers or not
+
+recommendations_yes <- gamestopsales[gamestopsales$recommended_review == "yes: I recommend this product",] 
+
+recommendations_no <- gamestopsales[gamestopsales$recommended_review == "No: I don’t recommend this product",]
+
+recommendations_yes
+recommendations_no
+```
+
+```{r}
+#made a 2nd visualization in which I used both split datasets to create a histogram bar chart for each dataset 
+#
+
+library(viridis)
+recommendations_yes |>
+  head(500) |>
+  ggplot(aes(x=brand, y = recommended_review, fill = brand)) +
+  geom_bar(stat = "identity") +
+  geom_col() +
+  theme_void()
+
+recommendations_no |>
+  head(500) |>
+  ggplot(aes(x=brand, y = recommended_review, fill = brand)) +
+  geom_bar(stat = "identity") +
+  geom_col() +
+  theme_void()
+
+gamestopsales |>
+  head(500) |>
+  ggplot(aes(x=brand, y = recommended_review, fill = brand)) +
+  geom_bar(stat = "identity") +
+  geom_col() +
+  theme_void() #not a very great main visual
+
+First_100_Reviews <- gamestopsales[1:500,]
+ggplot(data = First_100_Reviews) +
+  geom_bar(aes(x=brand, y=rating, fill = brand),
+           position = "dodge", stat = "identity") +
+  labs(fill = "Brands",
+       y = "Ratings",
+       title = "Ratings of Products by Brand (Both Yes and No)",
+       caption = "Source: Crawl Feeds") +
+  theme_minimal()
+```
+
+For this dataset, I did not have to clean up, I was not using data in a way where the empty values in columns such as "verified_purchaser" got in the way since they were not relevant to what I was trying to unfold. The first visualization displays a treemap of customer average ratings by brand, the darker the brand square, the more high ratings they had. The second visual, I had to create 2 new datasets splitting the people who would and would not recommend products. I made bar graphs for both so that I could then compare it against a more detailed 3rd bar graph that displayed customer ratings by brand. I used a sample data of the first 500 observations for all 3 graphs in my 2nd visual. Based on that, I did find it surprising that depite brands like Nintendo that had a vast amount of reviews that would not recommend their products, it still had some of the most highly reviewed products. Only Ja-Ru had a positive correlation with customer recommendation and rating, whereas some of the rest were negative. One thing I do regret not being able to do is fixing the legend in my treemap in my first visual because the range is wrong, however the actual y axis measure is not wrong. I also was unable to implement a caption to my treemap visual.
